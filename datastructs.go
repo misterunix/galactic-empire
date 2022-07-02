@@ -11,6 +11,7 @@ type Sector struct {
 
 type Planet struct {
 	ID             int
+	Sector         int
 	Name           string
 	Owner          int
 	Equipment      int
@@ -27,6 +28,7 @@ type Planet struct {
 
 type Station struct {
 	ID             int
+	Sector         int
 	Name           string
 	Owner          int
 	Equipment      int
