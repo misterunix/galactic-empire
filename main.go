@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -14,11 +15,10 @@ func main() {
 	worldY = 50
 
 	s := worldX * worldY
+	md := float64(math.Sqrt(float64(s))) / 6.0
 
 	p := int(float64(s) * 0.33)
 	st := int(float64(s) * 0.05)
 	buildUniverse(s, p, st, int(md))
 
-	d := distance(0, 0, s, s)
-	fmt.Println(d)
 }

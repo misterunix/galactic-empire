@@ -8,6 +8,7 @@ import (
 	"github.com/abhinav-TB/dantdb"
 )
 
+// overly complicated function to create print out the progress of the creation
 func printComplete(s string, v1, v2 int) {
 
 	doneV := float64(v1) / float64(v2) * 100.0
@@ -54,6 +55,7 @@ func createPlanets(db *dantdb.Driver, sectorCount, planetCount int) {
 
 		p := Planet{
 			ID:             i,
+			Sector:         -1,
 			Name:           fmt.Sprintf("Planet %d", i),
 			Owner:          -1,
 			Equipment:      0,
@@ -90,6 +92,7 @@ func createStations(db *dantdb.Driver, sectorCount, stationCount int) {
 
 		s := Station{
 			ID:             i,
+			Sector:         -1,
 			Name:           fmt.Sprintf("Station %d", i),
 			Owner:          -1,
 			Equipment:      0,
@@ -118,6 +121,7 @@ func createStations(db *dantdb.Driver, sectorCount, stationCount int) {
 // sectorCount: number of sectors in the universe
 // planetCount: number of planets in each sector
 // stationCount: number of stations in each sector
+// minDistance: minimum distance between players
 func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistance int) error {
 
 	fmt.Println("Building universe...")
@@ -287,15 +291,32 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 	for i := 0; i < planetCount; i++ {
 
 		for {
-			s := rand.Intn(sectorCount)
-			s1 := Sector{}
-			err := db.Read("Sector", strconv.Itoa(s), &s1)
+
+			s := rand.Intn(sectorCount) // random sector
+
+			p := Planet{} // planet data
+			err := db.Read("Planet", strconv.Itoa(i), &p)
 			if err != nil {
 				return err
 			}
+
+			s1 := Sector{} // sector data
+			err = db.Read("Sector", strconv.Itoa(s), &s1)
+			if err != nil {
+				return err
+			}
+
 			if s1.Planet == -1 {
+				// add the planet to the sector
 				s1.Planet = i
 				err = db.Write("Sector", strconv.Itoa(s), s1)
+				if err != nil {
+					return err
+				}
+
+				// add the sector to the planet
+				p.Sector = s
+				err = db.Write("Planet", strconv.Itoa(i), p)
 				if err != nil {
 					return err
 				}
@@ -315,18 +336,37 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 	for i := 0; i < stationCount; i++ {
 
 		for {
-			s := rand.Intn(sectorCount)
-			s1 := Sector{}
+
+			s := rand.Intn(sectorCount) // random sector
+
+			s1 := Sector{} // sector data
 			err := db.Read("Sector", strconv.Itoa(s), &s1)
 			if err != nil {
 				return err
 			}
+
+			s2 := Station{} // station data
+			err = db.Read("Station", strconv.Itoa(i), &s2)
+			if err != nil {
+				return err
+			}
+
 			if s1.Station == -1 && s1.Planet == -1 {
+
+				// add the station to the sector
 				s1.Station = i
 				err = db.Write("Sector", strconv.Itoa(s), s1)
 				if err != nil {
 					return err
 				}
+
+				// add the sector to the station
+				s2.Sector = s
+				err = db.Write("Station", strconv.Itoa(i), s2)
+				if err != nil {
+					return err
+				}
+
 				break
 			}
 		}
@@ -338,8 +378,8 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 	fmt.Println()
 
 	// Assign players to sectors
-	var pl [6]int
-	md := float64(worldX*worldY) / 6.0
+	var pl [6]int // player list for random planet
+
 	fmt.Println("Assigning players to Planets...")
 	for {
 		bad := false
@@ -348,12 +388,14 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 			pl[i] = rand.Intn(planetCount)
 		}
 
-		for j := 0; j < 6; j++ {
-			for k := 0; k < 6; k++ {
+		for j := 0; j < 5; j++ {
+			for k := j; k < 6; k++ {
 				if j == k {
 					continue
 				}
-				if distance(pl[j], pl[k]) < md {
+				dis := distance(pl[j], pl[k])
+				if dis < minDistance {
+					fmt.Println("Bad distance:", pl[j], pl[k], dis)
 					bad = true
 				}
 			}
@@ -366,16 +408,19 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 	}
 
 	for i := 0; i < 6; i++ {
-		s1 := Sector{}
-		err := db.Read("Sector", strconv.Itoa(pl[i]), &s1)
+
+		p := Planet{} // planet data
+		err := db.Read("Planet", strconv.Itoa(pl[i]), &p)
 		if err != nil {
 			return err
 		}
-		s1.Player = i
-		err = db.Write("Sector", strconv.Itoa(pl[i]), s1)
+		p.Owner = i
+		err = db.Write("Planet", strconv.Itoa(pl[i]), p)
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Player %d is on Planet %d\n", i, pl[i])
+
 	}
 
 	return nil
