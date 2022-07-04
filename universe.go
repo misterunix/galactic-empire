@@ -18,7 +18,7 @@ func printComplete(s string, v1, v2 int) {
 }
 
 // Create blank sectors
-func createSectors(db *dantdb.Driver, sectorCount int) {
+func createSectors(db *dantdb.Driver) {
 
 	fmt.Println("Creating blank sectors...")
 	for i := 0; i < sectorCount; i++ {
@@ -43,7 +43,7 @@ func createSectors(db *dantdb.Driver, sectorCount int) {
 }
 
 // Create semi-blank planets
-func createPlanets(db *dantdb.Driver, sectorCount, planetCount int) {
+func createPlanets(db *dantdb.Driver, planetCount int) {
 	fmt.Println("Creating semi-blank planets...")
 	for i := 0; i < planetCount; i++ {
 
@@ -80,7 +80,7 @@ func createPlanets(db *dantdb.Driver, sectorCount, planetCount int) {
 }
 
 // Create semi-blank stations
-func createStations(db *dantdb.Driver, sectorCount, stationCount int) {
+func createStations(db *dantdb.Driver, stationCount int) {
 	fmt.Println("Creating semi-blank stations...")
 	for i := 0; i < stationCount; i++ {
 
@@ -122,7 +122,7 @@ func createStations(db *dantdb.Driver, sectorCount, stationCount int) {
 // planetCount: number of planets in each sector
 // stationCount: number of stations in each sector
 // minDistance: minimum distance between players
-func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistance int) error {
+func buildUniverse(planetCount int, stationCount int, minDistance int) error {
 
 	fmt.Println("Building universe...")
 
@@ -132,7 +132,7 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 		return err
 	}
 
-	createSectors(db, sectorCount)
+	createSectors(db)
 
 	// Create blank sectors
 	/*
@@ -160,7 +160,7 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 		fmt.Println()
 	*/
 
-	createPlanets(db, sectorCount, planetCount)
+	createPlanets(db, planetCount)
 	/*
 		// Create semi-blank planets
 		fmt.Println("Creating semi-blank planets...")
@@ -197,7 +197,7 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 		fmt.Println()
 	*/
 
-	createStations(db, sectorCount, stationCount)
+	createStations(db, stationCount)
 	/*
 		// Create semi-blank stations
 		fmt.Println("Creating semi-blank stations...")
@@ -423,5 +423,34 @@ func buildUniverse(sectorCount int, planetCount int, stationCount int, minDistan
 
 	}
 
+	linkdistance(db, 1, 44)
+
 	return nil
+}
+
+// link count between two sectors
+func linkdistance(db *dantdb.Driver, bs int, es int) int {
+
+	largemap := make(map[int][]int)
+
+	for i := 0; i < sectorCount; i++ {
+
+		s1 := Sector{} // sector data
+		err := db.Read("Sector", strconv.Itoa(bs), &s1)
+		if err != nil {
+			return -1
+		}
+
+		for j := 0; j < 8; j++ {
+			if s1.Links[j] != -1 {
+				largemap[i] = append(largemap[i], s1.Links[j])
+			}
+		}
+	}
+
+	for i := 0; i < sectorCount; i++ {
+		fmt.Println(largemap[i])
+	}
+
+	return 1
 }
