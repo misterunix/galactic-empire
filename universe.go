@@ -436,7 +436,7 @@ func linkdistance(db *dantdb.Driver, bs int, es int) int {
 	for i := 0; i < sectorCount; i++ {
 
 		s1 := Sector{} // sector data
-		err := db.Read("Sector", strconv.Itoa(bs), &s1)
+		err := db.Read("Sector", strconv.Itoa(i), &s1)
 		if err != nil {
 			return -1
 		}
@@ -445,12 +445,18 @@ func linkdistance(db *dantdb.Driver, bs int, es int) int {
 			if s1.Links[j] != -1 {
 				largemap[i] = append(largemap[i], s1.Links[j])
 			}
+
 		}
+
 	}
 
-	for i := 0; i < sectorCount; i++ {
-		fmt.Println(largemap[i])
-	}
+	/*
+		for i := 0; i < sectorCount; i++ {
+			fmt.Println(largemap[i])
+		}
+	*/
+
+	// Nearest neighbour algorithm of sector links
 
 	return 1
 }
